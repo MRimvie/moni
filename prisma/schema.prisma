@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revenus       Revenu[]
+  depenses      Depense[]
+  budgets       Budget[]
+  epargnes      Epargne[]
+  notifications Notification[]
+  conseils      Conseil[]
+  otpCodes      OtpCode[]
+
+  @@map("users")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  code      String
+  userId    String
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+enum TypeRevenu {
+  SALAIRE
+  PRIME
+  FREELANCE
+  INVESTISSEMENT
+  AUTRE
+}
+
+model Revenu {
+  id         String      @id @default(uuid())
+  montant    Float
+  type       TypeRevenu  @default(AUTRE)
+  date       DateTime    @default(now())
+  recurrent  Boolean     @default(false)
+  description String?
+  userId     String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("revenus")
+}
+
+enum CategorieDepense {
+  ALIMENTATION
+  TRANSPORT
+  LOGEMENT
+  SANTE
+  EDUCATION
+  LOISIRS
+  VETEMENTS
+  COMMUNICATION
+  AUTRE
+}
+
+model Depense {
+  id          String           @id @default(uuid())
+  montant     Float
+  categorie   CategorieDepense @default(AUTRE)
+  description String?
+  date        DateTime         @default(now())
+  userId      String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("depenses")
+}
+
+model Budget {
+  id                 String   @id @default(uuid())
+  montantMensuel     Float
+  montantJournalier  Float
+  montantUtilise     Float    @default(0)
+  mois               Int
+  annee              Int
+  userId             String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mois, annee])
+  @@map("budgets")
+}
+
+model Epargne {
+  id        String   @id @default(uuid())
+  montant   Float
+  objectif  String?
+  date      DateTime @default(now())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("epargnes")
+}
+
+enum TypeNotification {
+  BUDGET_10
+  BUDGET_50
+  BUDGET_80
+  BUDGET_100
+  DEPASSE
+  EPARGNE
+  CONSEIL
+  AUTRE
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  message   String
+  type      TypeNotification   @default(AUTRE)
+  isRead    Boolean            @default(false)
+  userId    String
+  createdAt DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum TypeConseil {
+  ECONOMIE
+  CATEGORIE
+  EPARGNE
+  BUDGET
+  AUTRE
+}
+
+model Conseil {
+  id        String      @id @default(uuid())
+  message   String
+  type      TypeConseil @default(AUTRE)
+  userId    String
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("conseils")
+}
