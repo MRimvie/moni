@@ -1,5 +1,8 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:18-alpine3.19 AS builder
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl1.1-compat
 
 WORKDIR /app
 
@@ -22,6 +25,9 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine3.19
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl1.1-compat
+
 WORKDIR /app
 
 # Copy package files
@@ -37,9 +43,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Expose port
 EXPOSE 3000
-
-# Start command
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
 
 # Start command
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
