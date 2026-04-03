@@ -1,8 +1,5 @@
 # Build stage
-FROM node:18-alpine3.19 AS builder
-
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl1.1-compat
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
@@ -23,10 +20,10 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine3.19
+FROM node:18-slim
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl1.1-compat
+RUN apt-get update -y && apt-get install -y openssl
 
 WORKDIR /app
 
