@@ -21,4 +21,16 @@ export class EpargneController {
     const total = await this.epargneService.getTotalEpargne(user.id);
     return { total };
   }
+
+  @Get('calcul-journalier')
+  @ApiOperation({ summary: 'Calculer l\'épargne du jour' })
+  async calculerEpargneJour(@CurrentUser() user: any) {
+    return this.epargneService.calculerEpargneJournaliere(user.id);
+  }
+
+  @Get('historique')
+  @ApiOperation({ summary: 'Obtenir l\'historique des épargnes par jour' })
+  async getHistorique(@CurrentUser() user: any) {
+    return this.epargneService.getHistoriqueParJour(user.id);
+  }
 }

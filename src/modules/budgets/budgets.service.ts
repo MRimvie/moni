@@ -94,6 +94,50 @@ export class BudgetsService {
     });
   }
 
+  async getProgression(userId: string) {
+    const now = new Date();
+    const mois = now.getMonth() + 1;
+    const annee = now.getFullYear();
+
+    // Récupérer ou créer le budget du mois
+    const budget = await this.getOrCreateBudget(userId, mois, annee);
+
+    // Calculer les dépenses du mois
+    const startOfMonth = new Date(annee, mois - 1, 1);
+    const endOfMonth = new Date(annee, mois, 0, 23, 59, 59);
+
+    const depenses = await this.prisma.depense.findMany({
+      where: {
+        userId,
+        date: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+    });
+
+    const totalDepenses = depenses.reduce((sum, d) => sum + d.montant, 0);
+    const pourcentage = budget.montantMensuel > 0 
+      ? (totalDepenses / budget.montantMensuel) * 100 
+      : 0;
+
+    let status = 'Bon';
+    if (pourcentage >= 100) status = 'Dépassé';
+    else if (pourcentage >= 80) status = 'Attention';
+    else if (pourcentage >= 50) status = 'Modéré';
+
+    return {
+      budgetMensuel: budget.montantMensuel,
+      budgetJournalier: budget.montantJournalier,
+      montantUtilise: totalDepenses,
+      montantRestant: Math.max(0, budget.montantMensuel - totalDepenses),
+      pourcentage: Math.round(pourcentage * 10) / 10,
+      status,
+      mois,
+      annee,
+    };
+  }
+
   private getJoursRestantsDansMois(mois: number, annee: number): number {
     const maintenant = new Date();
     const debutMois = new Date(annee, mois - 1, 1);

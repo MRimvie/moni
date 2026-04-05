@@ -21,4 +21,10 @@ export class BudgetsController {
   async findAll(@CurrentUser() user: any) {
     return this.budgetsService.findAll(user.id);
   }
+
+  @Get('progression')
+  @ApiOperation({ summary: 'Obtenir la progression du budget du mois en cours' })
+  async getProgression(@CurrentUser() user: any) {
+    return this.budgetsService.getProgression(user.id);
+  }
 }
