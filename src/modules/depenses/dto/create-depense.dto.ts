@@ -20,4 +20,8 @@ export class CreateDepenseDto {
   @IsDateString()
   @IsOptional()
   date?: string;
+
+  @ApiProperty({ example: true, required: false, description: 'Indique si la dépense compte dans le budget journalier' })
+  @IsOptional()
+  compteDansBudgetJournalier?: boolean;
 }
