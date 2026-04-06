@@ -7,13 +7,10 @@ export class BudgetsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateBudgetDto) {
-    const joursRestants = this.getJoursRestantsDansMois(dto.mois, dto.annee);
-    const montantJournalier = dto.montantMensuel / joursRestants;
-
     return this.prisma.budget.create({
       data: {
         montantMensuel: dto.montantMensuel,
-        montantJournalier,
+        montantJournalier: dto.montantJournalier,
         mois: dto.mois,
         annee: dto.annee,
         userId,
@@ -46,14 +43,13 @@ export class BudgetsService {
     });
 
     if (!budget) {
-      const joursRestants = this.getJoursRestantsDansMois(mois, annee);
       const montantMensuelDefaut = 100000;
-      const montantJournalier = montantMensuelDefaut / joursRestants;
+      const montantJournalierDefaut = 3500;
 
       budget = await this.prisma.budget.create({
         data: {
           montantMensuel: montantMensuelDefaut,
-          montantJournalier,
+          montantJournalier: montantJournalierDefaut,
           mois,
           annee,
           userId,
@@ -77,19 +73,11 @@ export class BudgetsService {
     });
   }
 
-  async recalculerBudgetJournalier(budgetId: string) {
-    const budget = await this.prisma.budget.findUnique({
-      where: { id: budgetId },
-    });
-
-    const joursRestants = this.getJoursRestantsDansMois(budget.mois, budget.annee);
-    const montantRestant = budget.montantMensuel - budget.montantUtilise;
-    const nouveauMontantJournalier = Math.max(0, montantRestant / joursRestants);
-
+  async updateBudgetJournalier(budgetId: string, montantJournalier: number) {
     return this.prisma.budget.update({
       where: { id: budgetId },
       data: {
-        montantJournalier: nouveauMontantJournalier,
+        montantJournalier,
       },
     });
   }

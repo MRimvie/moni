@@ -6,6 +6,10 @@ export class CreateBudgetDto {
   @IsNumber()
   montantMensuel: number;
 
+  @ApiProperty({ example: 10000 })
+  @IsNumber()
+  montantJournalier: number;
+
   @ApiProperty({ example: 4 })
   @IsInt()
   @Min(1)
