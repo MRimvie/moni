@@ -7,8 +7,20 @@ export class BudgetsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateBudgetDto) {
-    return this.prisma.budget.create({
-      data: {
+    // Utiliser upsert pour créer ou mettre à jour
+    return this.prisma.budget.upsert({
+      where: {
+        userId_mois_annee: {
+          userId,
+          mois: dto.mois,
+          annee: dto.annee,
+        },
+      },
+      update: {
+        montantMensuel: dto.montantMensuel,
+        montantJournalier: dto.montantJournalier,
+      },
+      create: {
         montantMensuel: dto.montantMensuel,
         montantJournalier: dto.montantJournalier,
         mois: dto.mois,
