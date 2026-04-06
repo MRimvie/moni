@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EpargneService } from './epargne.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -11,8 +11,14 @@ export class EpargneController {
 
   @Get()
   @ApiOperation({ summary: 'Obtenir toutes les épargnes' })
-  async findAll(@CurrentUser() user: any) {
-    return this.epargneService.findAll(user.id);
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  async findAll(
+    @CurrentUser() user: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.epargneService.findAll(user.id, startDate, endDate);
   }
 
   @Get('total')

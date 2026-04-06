@@ -5,9 +5,17 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class EpargneService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId: string) {
+  async findAll(userId: string, startDate?: string, endDate?: string) {
+    const where: any = { userId };
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    }
+
     return this.prisma.epargne.findMany({
-      where: { userId },
+      where,
       orderBy: { date: 'desc' },
     });
   }
