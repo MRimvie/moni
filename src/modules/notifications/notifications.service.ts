@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TypeNotification } from '@prisma/client';
+import { FcmService } from '../fcm/fcm.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fcmService: FcmService,
+  ) {}
 
   async findAll(userId: string, isRead?: boolean) {
     const where: any = { userId };
@@ -47,22 +51,77 @@ export class NotificationsService {
       return existingNotif;
     }
 
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         message,
         type: type as TypeNotification,
         userId,
       },
     });
+
+    // Envoyer la notification push
+    try {
+      await this.fcmService.sendNotificationToUser(
+        userId,
+        this.getNotificationTitle(type as TypeNotification),
+        message,
+        { 
+          notificationId: notification.id,
+          type: type,
+        },
+      );
+    } catch (error) {
+      console.error('Erreur envoi push notification:', error);
+    }
+
+    return notification;
+  }
+
+  private getNotificationTitle(type: TypeNotification): string {
+    switch (type) {
+      case 'BUDGET_10':
+        return '📊 Budget Moni';
+      case 'BUDGET_50':
+        return '📊 Budget à 50%';
+      case 'BUDGET_80':
+        return '⚠️ Attention Budget';
+      case 'BUDGET_100':
+        return '🚨 Budget Dépassé';
+      case 'DEPASSE':
+        return '🚨 Budget Dépassé';
+      case 'EPARGNE':
+        return '💰 Épargne';
+      case 'CONSEIL':
+        return '💡 Conseil Financier';
+      default:
+        return '🔔 Moni';
+    }
   }
 
   async createNotification(userId: string, type: TypeNotification, message: string) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         message,
         type,
         userId,
       },
     });
+
+    // Envoyer la notification push
+    try {
+      await this.fcmService.sendNotificationToUser(
+        userId,
+        this.getNotificationTitle(type),
+        message,
+        { 
+          notificationId: notification.id,
+          type: type,
+        },
+      );
+    } catch (error) {
+      console.error('Erreur envoi push notification:', error);
+    }
+
+    return notification;
   }
 }

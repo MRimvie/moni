@@ -12,6 +12,7 @@ import { EpargneModule } from './modules/epargne/epargne.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ConseilsModule } from './modules/conseils/conseils.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
+import { FcmModule } from './modules/fcm/fcm.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -32,6 +33,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     NotificationsModule,
     ConseilsModule,
     StatisticsModule,
+    FcmModule,
   ],
   providers: [
     {
