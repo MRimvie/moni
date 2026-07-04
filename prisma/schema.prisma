@@ -76,6 +76,8 @@ model Budget {
   montantMensuel    Float
   montantJournalier Float
   montantUtilise    Float    @default(0)
+  revenuMensuel     Float?
+  objectifEpargne   Float?
   mois              Int
   annee             Int
   userId            String

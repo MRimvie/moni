@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 
@@ -7,6 +7,9 @@ export class BudgetsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateBudgetDto) {
+    const { montantMensuel, montantJournalier, revenuMensuel, objectifEpargne } =
+      this.resolveMontants(dto);
+
     // Utiliser upsert pour créer ou mettre à jour
     return this.prisma.budget.upsert({
       where: {
@@ -17,17 +20,54 @@ export class BudgetsService {
         },
       },
       update: {
-        montantMensuel: dto.montantMensuel,
-        montantJournalier: dto.montantJournalier,
+        montantMensuel,
+        montantJournalier,
+        revenuMensuel,
+        objectifEpargne,
       },
       create: {
-        montantMensuel: dto.montantMensuel,
-        montantJournalier: dto.montantJournalier,
+        montantMensuel,
+        montantJournalier,
+        revenuMensuel,
+        objectifEpargne,
         mois: dto.mois,
         annee: dto.annee,
         userId,
       },
     });
+  }
+
+  /**
+   * Si revenuMensuel + objectifEpargne sont fournis, le budget mensuel et journalier
+   * sont dérivés automatiquement plutôt que saisis manuellement.
+   */
+  private resolveMontants(dto: CreateBudgetDto) {
+    if (dto.revenuMensuel != null && dto.objectifEpargne != null) {
+      const montantMensuel = Math.max(0, dto.revenuMensuel - dto.objectifEpargne);
+      const joursRestants = this.getJoursRestantsDansMois(dto.mois, dto.annee);
+      const montantJournalier =
+        Math.round((montantMensuel / joursRestants) * 100) / 100;
+
+      return {
+        montantMensuel,
+        montantJournalier,
+        revenuMensuel: dto.revenuMensuel,
+        objectifEpargne: dto.objectifEpargne,
+      };
+    }
+
+    if (dto.montantMensuel == null || dto.montantJournalier == null) {
+      throw new BadRequestException(
+        'Fournissez soit (revenuMensuel et objectifEpargne), soit (montantMensuel et montantJournalier).',
+      );
+    }
+
+    return {
+      montantMensuel: dto.montantMensuel,
+      montantJournalier: dto.montantJournalier,
+      revenuMensuel: dto.revenuMensuel,
+      objectifEpargne: dto.objectifEpargne,
+    };
   }
 
   async findAll(userId: string) {
@@ -132,6 +172,8 @@ export class BudgetsService {
       montantUtilise: totalDepenses,
       montantRestant: Math.max(0, budget.montantMensuel - totalDepenses),
       pourcentage: Math.round(pourcentage * 10) / 10,
+      revenuMensuel: budget.revenuMensuel,
+      objectifEpargne: budget.objectifEpargne,
       status,
       mois,
       annee,
