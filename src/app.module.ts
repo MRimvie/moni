@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import configuration from './config/configuration';
+import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -35,6 +36,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     StatisticsModule,
     FcmModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
