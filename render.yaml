@@ -25,4 +25,28 @@ services:
         generateValue: true
       - key: JWT_REFRESH_EXPIRATION
         value: 30d
+      # Firebase Admin (push notifications) - firebase-credentials.json est gitignored,
+      # donc absent du build Render : ces 3 vars sont indispensables pour que FcmService démarre.
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
     healthCheckPath: /
