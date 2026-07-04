@@ -1,15 +1,5 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: moni-db
-    env: docker
-    plan: free
-    region: frankfurt
-    databases:
-      - name: moni_db
-        user: moni_user
-
-  # Backend API
+  # Backend API - base de données hébergée sur Supabase (voir Dashboard Render > Environment)
   - type: web
     name: moni-api
     env: docker
@@ -17,10 +7,12 @@ services:
     region: frankfurt
     dockerfilePath: ./Dockerfile
     envVars:
+      # Renseignés manuellement dans le Dashboard Render (Environment > Secret File ou Env Vars)
+      # car ce sont des secrets Supabase qui ne doivent pas être committés.
       - key: DATABASE_URL
-        fromDatabase:
-          name: moni-db
-          property: connectionString
+        sync: false
+      - key: DIRECT_URL
+        sync: false
       - key: NODE_ENV
         value: production
       - key: PORT
