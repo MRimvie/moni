@@ -1,5 +1,6 @@
 # Build stage
-FROM node:18-slim AS builder
+# Node >= 20 requis : @nestjs/schedule v6 utilise le global crypto (absent en Node 18)
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -20,7 +21,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage
-FROM node:18-slim
+FROM node:22-slim
 
 # Install OpenSSL for Prisma
 RUN apt-get update -y && apt-get install -y openssl
