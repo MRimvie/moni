@@ -36,13 +36,23 @@ export class NotificationsService {
     });
   }
 
-  async createBudgetNotification(userId: string, type: string, message: string) {
+  /**
+   * Crée une notification (BDD + push FCM) avec déduplication par type :
+   * aucune nouvelle notification du même type n'est envoyée si une existe
+   * déjà depuis `dedupSince` (par défaut : les dernières 24h).
+   */
+  async createBudgetNotification(
+    userId: string,
+    type: string,
+    message: string,
+    dedupSince?: Date,
+  ) {
     const existingNotif = await this.prisma.notification.findFirst({
       where: {
         userId,
         type: type as TypeNotification,
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          gte: dedupSince ?? new Date(Date.now() - 24 * 60 * 60 * 1000),
         },
       },
     });
@@ -80,21 +90,21 @@ export class NotificationsService {
   private getNotificationTitle(type: TypeNotification): string {
     switch (type) {
       case 'BUDGET_10':
-        return '📊 Budget Moni';
+        return 'Budget Moni';
       case 'BUDGET_50':
-        return '📊 Budget à 50%';
+        return 'Budget à 50%';
       case 'BUDGET_80':
-        return '⚠️ Attention Budget';
+        return 'Attention Budget';
       case 'BUDGET_100':
-        return '🚨 Budget Dépassé';
+        return 'Budget mensuel dépassé';
       case 'DEPASSE':
-        return '🚨 Budget Dépassé';
+        return 'Budget du jour dépassé';
       case 'EPARGNE':
-        return '💰 Épargne';
+        return 'Épargne';
       case 'CONSEIL':
-        return '💡 Conseil Financier';
+        return 'Conseil financier';
       default:
-        return '🔔 Moni';
+        return 'Moni';
     }
   }
 

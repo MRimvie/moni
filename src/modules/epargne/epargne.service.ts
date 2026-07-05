@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EpargneService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(userId: string, startDate?: string, endDate?: string) {
     const where: any = { userId };
@@ -28,12 +32,45 @@ export class EpargneService {
     return epargnes.reduce((sum, epargne) => sum + epargne.montant, 0);
   }
 
-  async ajouterEpargneAutomatique(userId: string, montant: number) {
-    if (montant <= 0) return null;
+  /**
+   * Maintient l'épargne automatique du jour en UNE seule ligne par utilisateur :
+   * mise à jour au fil des dépenses (et non ajoutée à chaque dépense, ce qui
+   * comptait l'épargne plusieurs fois). Si le budget du jour est dépassé,
+   * la ligne du jour est supprimée.
+   */
+  async syncEpargneAutomatiqueDuJour(userId: string, montant: number) {
+    const debutJour = new Date();
+    debutJour.setHours(0, 0, 0, 0);
+    const finJour = new Date();
+    finJour.setHours(23, 59, 59, 999);
+
+    const existante = await this.prisma.epargne.findFirst({
+      where: {
+        userId,
+        objectif: 'Épargne automatique',
+        date: { gte: debutJour, lte: finJour },
+      },
+    });
+
+    if (montant <= 0) {
+      if (existante) {
+        await this.prisma.epargne.delete({ where: { id: existante.id } });
+      }
+      return null;
+    }
+
+    const arrondi = Math.round(montant * 100) / 100;
+
+    if (existante) {
+      return this.prisma.epargne.update({
+        where: { id: existante.id },
+        data: { montant: arrondi },
+      });
+    }
 
     return this.prisma.epargne.create({
       data: {
-        montant,
+        montant: arrondi,
         objectif: 'Épargne automatique',
         userId,
       },
@@ -41,13 +78,21 @@ export class EpargneService {
   }
 
   async ajouterEpargneManuelle(userId: string, montant: number, objectif?: string) {
-    return this.prisma.epargne.create({
+    const epargne = await this.prisma.epargne.create({
       data: {
         montant,
         objectif: objectif || 'Épargne manuelle',
         userId,
       },
     });
+
+    await this.notificationsService.createNotification(
+      userId,
+      'EPARGNE',
+      `Bravo ! Vous venez de mettre ${Math.round(montant)} FCFA de côté.`,
+    );
+
+    return epargne;
   }
 
   async calculerEpargneJournaliere(userId: string) {

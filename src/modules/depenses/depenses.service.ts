@@ -38,36 +38,58 @@ export class DepensesService {
     const budgetUpdated = await this.budgetsService.findOne(budget.id);
     const pourcentageUtilise = (budgetUpdated.montantUtilise / budgetUpdated.montantMensuel) * 100;
 
+    // Seuils mensuels : une seule notification par seuil et par mois.
+    const debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
     if (pourcentageUtilise >= 100) {
       await this.notificationsService.createBudgetNotification(
         userId,
         'BUDGET_100',
-        'Vous avez atteint 100% de votre budget mensuel!',
+        `Budget du mois dépassé : ${Math.round(budgetUpdated.montantUtilise)} FCFA dépensés sur ${Math.round(budgetUpdated.montantMensuel)} FCFA.`,
+        debutMois,
       );
     } else if (pourcentageUtilise >= 80) {
       await this.notificationsService.createBudgetNotification(
         userId,
         'BUDGET_80',
-        'Attention! Vous avez utilisé 80% de votre budget mensuel.',
+        'Attention ! Vous avez utilisé 80% de votre budget mensuel.',
+        debutMois,
       );
     } else if (pourcentageUtilise >= 50) {
       await this.notificationsService.createBudgetNotification(
         userId,
         'BUDGET_50',
-        'Vous avez utilisé 50% de votre budget mensuel.',
-      );
-    } else if (pourcentageUtilise >= 10) {
-      await this.notificationsService.createBudgetNotification(
-        userId,
-        'BUDGET_10',
-        'Vous avez commencé à utiliser votre budget mensuel.',
+        'Vous avez utilisé la moitié de votre budget mensuel.',
+        debutMois,
       );
     }
 
-    const depensesJour = await this.getDepensesJour(userId);
-    if (depensesJour < budgetUpdated.montantJournalier) {
-      const reste = budgetUpdated.montantJournalier - depensesJour;
-      await this.epargneService.ajouterEpargneAutomatique(userId, reste);
+    // La logique journalière ne s'applique que si la dépense date d'aujourd'hui.
+    const debutJour = new Date();
+    debutJour.setHours(0, 0, 0, 0);
+    if (depense.date >= debutJour) {
+      const depensesJour = await this.getDepensesJour(userId);
+      const depensesJourAvant = depensesJour - depense.montant;
+
+      // Dépassement du budget du jour : notifié au franchissement, une fois par jour.
+      if (
+        budgetUpdated.montantJournalier > 0 &&
+        depensesJourAvant <= budgetUpdated.montantJournalier &&
+        depensesJour > budgetUpdated.montantJournalier
+      ) {
+        await this.notificationsService.createBudgetNotification(
+          userId,
+          'DEPASSE',
+          `Budget du jour dépassé : ${Math.round(depensesJour)} FCFA dépensés sur ${Math.round(budgetUpdated.montantJournalier)} FCFA prévus.`,
+          debutJour,
+        );
+      }
+
+      // Maintient l'épargne provisoire du jour (budget journalier - dépenses)
+      // en une seule ligne, mise à jour au fil des dépenses.
+      await this.epargneService.syncEpargneAutomatiqueDuJour(
+        userId,
+        budgetUpdated.montantJournalier - depensesJour,
+      );
     }
 
     await this.conseilsService.genererConseilsAutomatiques(userId);
