@@ -97,13 +97,12 @@ export class BudgetsService {
     });
 
     if (!budget) {
-      const montantMensuelDefaut = 100000;
-      const montantJournalierDefaut = 3500;
-
+      // Aucune valeur par défaut : le budget reste à 0 tant que l'utilisateur
+      // n'a pas défini lui-même son plan (revenu, objectif, budget/jour).
       budget = await this.prisma.budget.create({
         data: {
-          montantMensuel: montantMensuelDefaut,
-          montantJournalier: montantJournalierDefaut,
+          montantMensuel: 0,
+          montantJournalier: 0,
           mois,
           annee,
           userId,

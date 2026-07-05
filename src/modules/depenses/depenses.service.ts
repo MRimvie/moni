@@ -36,7 +36,10 @@ export class DepensesService {
     await this.budgetsService.updateMontantUtilise(budget.id, depense.montant);
 
     const budgetUpdated = await this.budgetsService.findOne(budget.id);
-    const pourcentageUtilise = (budgetUpdated.montantUtilise / budgetUpdated.montantMensuel) * 100;
+    const pourcentageUtilise =
+      budgetUpdated.montantMensuel > 0
+        ? (budgetUpdated.montantUtilise / budgetUpdated.montantMensuel) * 100
+        : 0;
 
     // Seuils mensuels : une seule notification par seuil et par mois.
     const debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
