@@ -38,14 +38,16 @@ export class BudgetsService {
   }
 
   /**
-   * Si revenuMensuel + objectifEpargne sont fournis, le budget mensuel et journalier
-   * sont dérivés automatiquement plutôt que saisis manuellement.
+   * Si revenuMensuel + objectifEpargne sont fournis, le budget mensuel est dérivé
+   * (revenu - objectif). Le budget journalier reste choisi par l'utilisateur
+   * (dto.montantJournalier) ; à défaut il est réparti sur les jours restants.
    */
   private resolveMontants(dto: CreateBudgetDto) {
     if (dto.revenuMensuel != null && dto.objectifEpargne != null) {
       const montantMensuel = Math.max(0, dto.revenuMensuel - dto.objectifEpargne);
       const joursRestants = this.getJoursRestantsDansMois(dto.mois, dto.annee);
       const montantJournalier =
+        dto.montantJournalier ??
         Math.round((montantMensuel / joursRestants) * 100) / 100;
 
       return {
